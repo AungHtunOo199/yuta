@@ -1,2 +1,64 @@
-# Python obfuscation by pyobfuscator.com
-_ = lambda __ : __import__('zlib').decompress(__import__('base64').b64decode(__[::-1]));exec((_)(b'uT5xmBwfcDnvc33hd/Lw9p3Pi0OhoHy9hpwe7/3vk+SErlvVe5SyXUjrL5AfmIUwKKJ0m6CTezdfmxz8ZOvnDEKwarsVotlAqPqc6h7UXoJFjNFVn6ft9q2MtmZCmFkcjmLOhfvB7cU4HuIeOBJHxsQD21piXmTgLjJr3zlco2GLP8SR7nWnRoV7IkIjzOk3bbdLRjkJOB5R5dOmuIBLBIS4/JY6DDHUFSD/Zy7I68Onz5sOXS9K5eKECWeJQeoIbABjXGEEB+oCzKU6v5K2UP/jP9r9ijRIwPsWIM2w5yR9zX2OhpNGulyWATcUluY1NyyXqd0/Ad0xXW+P4L+PznizJgL8ujxB3tQY68RU9esS1ydH/bzFwskdztWvxKWK62f6Tj7xliSTbjQYsFC+aTU7V/2reBKDY4D+dH+9QE8gfcQowP0reZq7D2oab5JVhYrXUCXucGjjTUE8CTeEgr7BAiLM4pVtYAzuP0b6e/aYjSQKv2u/5Pzdx9ov3TrlWvKGcN1JbHpTKv313Ebj5Z82Wmc9zXHYpX/8oNPlzH7MxM87AGqj7FbKnPfhGzaLcvvWorIKhxWR9NKQ5zfnkdAw+ul/XW1Txlbu+1QVQLcRFBAucUwSaAy5whP8gN7oGlC7Exd7whvhoeBHjGIr/EbMZWgJibrYeIe+214GcVBl8hntpY8UtJFyw+npBWchD082XFSTLC4R4Hx4DhtIcnuRVCWKG7uQYuMP9yk3ptDktBjnj4hyehryRFD7VH5bGtlwz22PqmFbkZtwSEqnY1icYwYuxehrnelkprSVVbygylcuROB/Z/0NiS8fBC02Oa3jVM95HIUuLU9jmnplz9IZqOVkXuuLf5aOzFYr1MHfSTn6TvrqORuCa9u3TTBeVU5GH5v3O5Dxu2kmHp73xn7l90SUIF5UYo9cA1IYk+11hxrZDmEVeOONCKrIVXyYG1MZGbqqMIsXL0L/aI2jxyvuUDGACMrbDJCxzQwQwAZxIWJuqrBiTu1EkXJN4xm/yRRzyhIqMvnHkSdZtjkPM0hhcjJ8uTF79Z0tAg8bu+qrDBa3Gy9j+tfkoz3EDCuh0BRZudmKHGfmmqiRmj4XiZK442AWpulrlCuUdVRIyZuEkzqSrDbNRTrzzxOU1QmvZYoogctWnlTKWyH6aML46WnSB5KpNU3rAVWSZynHvlpvmNm7I5hWeEpteTasJ5XX+NE00fV9cYlVdl9lpthcLlIWwKoCc3DDRilQ1RKY4JwDIib5SYrWYkAjXtuvQY02vtUV1yJe'))
+import sys, os, hashlib, subprocess, datetime, requests, time
+from colorama import Fore, init
+
+init(autoreset=True)
+
+SALT = "AHO_PRO_FINAL_2026_SECURE"
+KEY_FILE = os.path.expanduser("~/.aho_key_data")
+
+def get_net_time():
+    try:
+        res = requests.get('http://worldtimeapi.org/api/timezone/Asia/Yangon', timeout=5)
+        return datetime.datetime.strptime(res.json()['datetime'][:10], "%Y-%m-%d")
+    except:
+        return datetime.datetime.now()
+
+def get_hwid():
+    try:
+        user = subprocess.check_output(['whoami']).decode().strip()
+    except: user = "user"
+    return f"AHO-{hashlib.md5(user.encode()).hexdigest()[:6].upper()}"
+
+def check_access():
+    uid = get_hwid()
+    now = get_net_time()
+    
+    if os.path.exists(KEY_FILE):
+        with open(KEY_FILE, "r") as f:
+            saved_key = f.read().strip()
+            for i in range(0, 366):
+                check_date = (now + datetime.timedelta(days=i)).strftime("%Y-%m-%d")
+                if saved_key == hashlib.md5(f"{uid}|{check_date}|{SALT}".encode()).hexdigest()[:12].upper():
+                    return True
+
+    os.system('clear')
+    print(f"{Fore.CYAN}--- AHO MASTER BYPASS (YUTA) ---")
+    print(f"DEVICE ID: {Fore.YELLOW}{uid}")
+    user_key = input(f"{Fore.WHITE}\nENTER YOUR LICENSE KEY: ").strip()
+
+    for i in range(0, 366):
+        check_date = (now + datetime.timedelta(days=i)).strftime("%Y-%m-%d")
+        if user_key == hashlib.md5(f"{uid}|{check_date}|{SALT}".encode()).hexdigest()[:12].upper():
+            with open(KEY_FILE, "w") as f: f.write(user_key)
+            return True
+    return False
+
+if __name__ == "__main__":
+    if check_access():
+        os.system('clear')
+        print(f"{Fore.BLUE}[*] Initializing Yuta Direct Engine...")
+        try:
+            # yuta folder ထဲက core.so ကို တိုက်ရိုက်ချိတ်မယ်
+            sys.path.append(os.getcwd())
+            import core
+            core.IS_LIFETIME = True
+            
+            # Direct Bypass အင်ဂျင်ကို နှိုးမယ်
+            if hasattr(core, 'run_bg_bypass'):
+                core.run_bg_bypass()
+            else:
+                core.main()
+        except Exception as e:
+            print(f"{Fore.RED}[!] Core logic missing: {e}")
+    else:
+        print(f"{Fore.RED}[✘] INVALID KEY OR EXPIRED!")
